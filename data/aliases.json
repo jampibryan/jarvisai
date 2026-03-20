@@ -1,0 +1,22 @@
+﻿{
+  "custom_paths": {
+    "proyectos": "D:\\PROYECTOS",
+    "jarvis proyecto": "D:\\PROYECTOS\\JarvisAI",
+    "jarvis pdf": "D:\\PROYECTOS\\Jarvis.pdf",
+    "mi proyecto": "D:\\PROYECTOS\\JarvisAI",
+    "mis documentos": "C:\\Users\\jeibi\\Documents",
+    "mis descargas": "C:\\Users\\jeibi\\Downloads"
+  },
+  "custom_apps": {
+    "editor": "vscode",
+    "codigo": "vscode",
+    "visual studio code": "vscode",
+    "terminal": "cmd",
+    "consola": "cmd",
+    "explorador": "explorer",
+    "archivos": "explorer",
+    "navegador": "chrome",
+    "mi navegador": "chrome",
+    "whatsapp": "whatsapp"
+  }
+}
