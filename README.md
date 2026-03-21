@@ -1,28 +1,64 @@
 # JarvisAI
 
-Base modular para construir un asistente personal en Windows paso a paso.
+Asistente personal para Windows construido paso a paso.
 
 ## Estado actual
 
-Esta base inicial ya incluye:
+El proyecto ya tiene una V1 funcional orientada a comandos locales y memoria operativa.
 
-- estructura modular del proyecto
-- configuracion local centralizada en `app/config.py`
-- logging basico
-- modo texto para probar el flujo sin depender todavia del microfono
-- parser y router iniciales para comandos simples
+Actualmente incluye:
 
-## Alcance de esta primera base
+- ejecucion en modo texto
+- parser de comandos con lenguaje natural guiado
+- apertura de rutas y aplicaciones
+- alias personalizados persistentes
+- mini base de datos SQLite para catalogo, historial y metricas
+- confirmacion para acciones sensibles
 
-La primera version deja preparado el proyecto para:
+La capa de voz todavia no forma parte de esta version. Esa sera la V2.
+
+## Que puede hacer hoy
+
+Jarvis ya puede:
 
 - abrir rutas conocidas
-- abrir aplicaciones configuradas
-- consultar hora
-- consultar fecha
-- cerrar el asistente
+- abrir aplicaciones conocidas
+- responder la hora
+- responder la fecha
+- listar comandos disponibles
+- mostrar metricas simples de uso
+- aprender alias nuevos desde consola
+- reemplazar alias existentes
+- pedir confirmacion antes de acciones sensibles
 
-## Estructura
+## Ejemplos de uso
+
+Comandos directos:
+
+- `hora`
+- `fecha`
+- `documentos`
+- `editor`
+- `comandos`
+- `metricas`
+- `salir`
+
+Frases mas naturales:
+
+- `jarvis, hora`
+- `jarvis abre documentos`
+- `jarvis, aprende que reportes abre D:\Reportes`
+- `jarvis recuerda que mi editor es vscode`
+- `jarvis actualiza que reportes abre D:\Otros`
+
+Acciones sensibles:
+
+- `reiniciar`
+- `apagar`
+- `si`
+- `no`
+
+## Arquitectura actual
 
 ```text
 JarvisAI/
@@ -30,17 +66,38 @@ JarvisAI/
 |- requirements.txt
 |- venv/
 |- app/
+|  |- actions/
+|  |- brain/
+|  |- memory/
+|  |- utils/
+|  |- assistant.py
+|  |- config.py
+|  |- state.py
 |- data/
-|- credentials/
+|  |- aliases.json
+|  |- history.db
 |- tests/
 ```
 
-## Configuracion
+## Componentes importantes
 
-Por ahora la configuracion base vive en `app/config.py`.
-La idea en esta etapa es que el proyecto pueda arrancar sin depender de paquetes externos adicionales.
+- `app/assistant.py`
+  Orquesta el flujo principal del asistente, la confirmacion de acciones sensibles y la actualizacion del estado interno.
 
-Mas adelante, cuando agreguemos integraciones como Google Calendar o Gmail, separaremos configuraciones sensibles y credenciales de una forma mas segura.
+- `app/brain/parser.py`
+  Convierte texto en intenciones y soporta comandos naturales, alias y aprendizaje guiado.
+
+- `app/brain/router.py`
+  Ejecuta la accion correcta para cada intencion.
+
+- `app/memory/memory_manager.py`
+  Administra alias persistentes, sincroniza el catalogo de comandos y registra historial y metricas en SQLite.
+
+- `data/aliases.json`
+  Guarda alias personalizados de rutas y aplicaciones.
+
+- `data/history.db`
+  Guarda catalogo de comandos, historial de ejecucion, exito o fallo, tipo de error y tiempos simples.
 
 ## Ejecucion
 
@@ -48,12 +105,40 @@ Mas adelante, cuando agreguemos integraciones como Google Calendar o Gmail, sepa
 .\venv\Scripts\python.exe main.py
 ```
 
-## Nota de seguridad
+## Persistencia y memoria
 
-- No guardes credenciales reales dentro del codigo.
-- No subas tokens, claves ni archivos privados al repositorio.
-- Evita documentar rutas personales o datos sensibles en archivos del proyecto.
+Jarvis usa dos fuentes locales:
 
-## Siguiente paso sugerido
+- `data/aliases.json`
+  Para alias editables y faciles de revisar manualmente.
 
-El siguiente avance natural es mejorar la V1 para que los comandos locales funcionen mejor y luego conectar la capa de voz.
+- `data/history.db`
+  Para informacion operativa del asistente:
+  catalogo de comandos, historial, errores y metricas.
+
+## Seguridad actual
+
+- no guardes credenciales reales dentro del codigo
+- no subas tokens, claves ni archivos privados al repositorio
+- evita documentar informacion sensible en archivos del proyecto
+- las acciones sensibles actualmente requieren confirmacion
+- `safe_mode` sigue activo para evitar ejecuciones destructivas reales durante desarrollo
+
+## Alcance de la V1
+
+Esta version se enfoca en:
+
+- comandos locales estables
+- alias y memoria
+- trazabilidad y metricas
+- lenguaje de uso mas natural
+
+## Siguiente etapa
+
+La siguiente gran fase sera la V2:
+
+- entrada por voz
+- reconocimiento de comandos hablados
+- salida por voz
+
+La idea es que la capa de voz reutilice este cerebro de comandos ya estabilizado.

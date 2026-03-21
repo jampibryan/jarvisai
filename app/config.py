@@ -43,6 +43,8 @@ class AppConfig:
             "excel": "excel",
             "power_bi": "power_bi",
             "whatsapp": "whatsapp",
+            "cmd": "cmd",
+            "explorer": "explorer",
         }
 
         return cls(
