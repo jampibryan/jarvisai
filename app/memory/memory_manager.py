@@ -6,6 +6,13 @@ import sqlite3
 import unicodedata
 from pathlib import Path
 
+from app.brain.command_catalog import (
+    BUILTIN_APP_COMMANDS,
+    BUILTIN_PATH_COMMANDS,
+    HUMAN_COMMAND_GUIDE,
+    SYSTEM_PHRASES,
+)
+
 
 class MemoryManager:
     def __init__(self, aliases_path: Path, database_path: Path) -> None:
@@ -57,18 +64,18 @@ class MemoryManager:
             connection.commit()
 
     def load_aliases(self) -> dict[str, dict[str, str]]:
-        default_aliases = {"custom_paths": {}, "custom_apps": {}}
+        default_aliases = {'custom_paths': {}, 'custom_apps': {}}
 
         if not self.aliases_path.exists():
             return default_aliases
 
         try:
-            data = json.loads(self.aliases_path.read_text(encoding="utf-8-sig"))
+            data = json.loads(self.aliases_path.read_text(encoding='utf-8-sig'))
         except (OSError, json.JSONDecodeError):
             return default_aliases
 
-        custom_paths = data.get("custom_paths", {})
-        custom_apps = data.get("custom_apps", {})
+        custom_paths = data.get('custom_paths', {})
+        custom_apps = data.get('custom_apps', {})
 
         if not isinstance(custom_paths, dict):
             custom_paths = {}
@@ -76,8 +83,8 @@ class MemoryManager:
             custom_apps = {}
 
         return {
-            "custom_paths": {str(key): str(value) for key, value in custom_paths.items()},
-            "custom_apps": {str(key): str(value) for key, value in custom_apps.items()},
+            'custom_paths': {str(key): str(value) for key, value in custom_paths.items()},
+            'custom_apps': {str(key): str(value) for key, value in custom_apps.items()},
         }
 
     def save_alias(self, alias_kind: str, label: str, target: str, replace: bool = False) -> dict[str, str]:
@@ -86,30 +93,30 @@ class MemoryManager:
         target = target.strip()
         normalized = self._normalize_phrase(label)
 
-        if alias_kind not in {"ruta", "app"}:
-            return {"ok": "0", "message": "El tipo de alias debe ser ruta o app."}
+        if alias_kind not in {'ruta', 'app'}:
+            return {'ok': '0', 'message': 'El tipo de alias debe ser ruta o app.'}
 
         if not normalized or len(normalized) < 2:
-            return {"ok": "0", "message": "El alias es demasiado corto o invalido."}
+            return {'ok': '0', 'message': 'El alias es demasiado corto o invalido.'}
 
         if not target:
-            return {"ok": "0", "message": "Debes indicar un destino para el alias."}
+            return {'ok': '0', 'message': 'Debes indicar un destino para el alias.'}
 
         conflict = self.find_conflict(normalized)
-        source_key = "custom_paths" if alias_kind == "ruta" else "custom_apps"
-        other_key = "custom_apps" if alias_kind == "ruta" else "custom_paths"
+        source_key = 'custom_paths' if alias_kind == 'ruta' else 'custom_apps'
+        other_key = 'custom_apps' if alias_kind == 'ruta' else 'custom_paths'
 
-        if conflict and conflict["source"] not in {"custom_path", "custom_app"}:
+        if conflict and conflict['source'] not in {'custom_path', 'custom_app'}:
             return {
-                "ok": "0",
-                "message": f"El alias '{label}' choca con un comando reservado del sistema o base.",
+                'ok': '0',
+                'message': f"El alias '{label}' choca con un comando reservado del sistema o base.",
             }
 
         other_match = self._find_alias_key_by_normalized(aliases[other_key], normalized)
         if other_match:
             return {
-                "ok": "0",
-                "message": f"El alias '{label}' ya existe en otra categoria personalizada. Usa otro nombre.",
+                'ok': '0',
+                'message': f"El alias '{label}' ya existe en otra categoria personalizada. Usa otro nombre.",
             }
 
         current_key = self._find_alias_key_by_normalized(aliases[source_key], normalized)
@@ -117,13 +124,13 @@ class MemoryManager:
             current_target = aliases[source_key][current_key]
             if current_target == target:
                 return {
-                    "ok": "1",
-                    "message": f"El alias '{current_key}' ya existia con ese mismo destino.",
+                    'ok': '1',
+                    'message': f"El alias '{current_key}' ya existia con ese mismo destino.",
                 }
             if not replace:
                 return {
-                    "ok": "0",
-                    "message": (
+                    'ok': '0',
+                    'message': (
                         f"El alias '{current_key}' ya existe y apunta a '{current_target}'. "
                         f"Usa reemplaza {alias_kind} {current_key} = {target} si quieres actualizarlo."
                     ),
@@ -132,15 +139,15 @@ class MemoryManager:
             aliases[source_key][label] = target
             self._write_aliases(aliases)
             return {
-                "ok": "1",
-                "message": f"Alias actualizado: '{label}' ahora apunta a '{target}'.",
+                'ok': '1',
+                'message': f"Alias actualizado: '{label}' ahora apunta a '{target}'.",
             }
 
         aliases[source_key][label] = target
         self._write_aliases(aliases)
         return {
-            "ok": "1",
-            "message": f"Alias guardado: '{label}' -> '{target}'.",
+            'ok': '1',
+            'message': f"Alias guardado: '{label}' -> '{target}'.",
         }
 
     def sync_command_catalog(
@@ -154,12 +161,12 @@ class MemoryManager:
         rows = []
         rows.extend(self._build_builtin_path_rows(path_aliases))
         rows.extend(self._build_builtin_app_rows(app_targets))
-        rows.extend(self._build_custom_rows(aliases.get("custom_paths", {}), "open_path", "path", "custom_path"))
-        rows.extend(self._build_custom_rows(aliases.get("custom_apps", {}), "open_app", "app", "custom_app"))
+        rows.extend(self._build_custom_rows(aliases.get('custom_paths', {}), 'open_path', 'path', 'custom_path'))
+        rows.extend(self._build_custom_rows(aliases.get('custom_apps', {}), 'open_app', 'app', 'custom_app'))
         rows.extend(self._build_system_rows())
 
         with sqlite3.connect(self.database_path) as connection:
-            connection.execute("DELETE FROM command_catalog")
+            connection.execute('DELETE FROM command_catalog')
             connection.executemany(
                 """
                 INSERT OR REPLACE INTO command_catalog (
@@ -196,13 +203,13 @@ class MemoryManager:
 
         return [
             {
-                "phrase": row[0],
-                "intent": row[1],
-                "target_type": row[2],
-                "source": row[3],
-                "category": row[4],
-                "risk_level": row[5],
-                "description": row[6],
+                'phrase': row[0],
+                'intent': row[1],
+                'target_type': row[2],
+                'source': row[3],
+                'category': row[4],
+                'risk_level': row[5],
+                'description': row[6],
             }
             for row in rows
         ]
@@ -210,37 +217,37 @@ class MemoryManager:
     def render_command_summary(self) -> str:
         commands = self.list_commands()
         if not commands:
-            return "Todavia no hay comandos registrados."
+            return 'Todavia no hay comandos registrados.'
 
-        titles = {
-            "system": "Sistema",
-            "path": "Rutas base",
-            "app": "Apps base",
-            "custom_path": "Rutas personalizadas",
-            "custom_app": "Apps personalizadas",
-            "dangerous": "Acciones sensibles",
-        }
-        ordered_categories = ["system", "path", "app", "custom_path", "custom_app", "dangerous"]
+        lines = ['Guia rapida de comandos recomendados:']
+        for example in HUMAN_COMMAND_GUIDE:
+            lines.append(f'- {example}')
 
-        lines = ["Comandos disponibles:"]
-        for category in ordered_categories:
-            category_commands = [item for item in commands if item["category"] == category]
-            if not category_commands:
-                continue
-            lines.append(f"- {titles[category]}:")
-            for item in category_commands:
-                risk = f" [{item['risk_level']}]" if item["risk_level"] != "low" else ""
-                lines.append(f"  {item['phrase']}: {item['description']}{risk}")
-        return "\n".join(lines)
+        custom_paths = [item for item in commands if item['category'] == 'custom_path']
+        custom_apps = [item for item in commands if item['category'] == 'custom_app']
+
+        if custom_paths:
+            lines.append('')
+            lines.append('Alias de rutas aprendidos:')
+            for item in custom_paths:
+                lines.append(f"- {item['phrase']}: {item['description']}")
+
+        if custom_apps:
+            lines.append('')
+            lines.append('Alias de apps aprendidos:')
+            for item in custom_apps:
+                lines.append(f"- {item['phrase']}: {item['description']}")
+
+        return '\n'.join(lines)
 
     def render_metrics_summary(self) -> str:
         self.ensure_database()
         with sqlite3.connect(self.database_path) as connection:
-            total = connection.execute("SELECT COUNT(*) FROM command_history").fetchone()[0]
-            success = connection.execute("SELECT COUNT(*) FROM command_history WHERE success = 1").fetchone()[0]
-            failures = connection.execute("SELECT COUNT(*) FROM command_history WHERE success = 0").fetchone()[0]
+            total = connection.execute('SELECT COUNT(*) FROM command_history').fetchone()[0]
+            success = connection.execute('SELECT COUNT(*) FROM command_history WHERE success = 1').fetchone()[0]
+            failures = connection.execute('SELECT COUNT(*) FROM command_history WHERE success = 0').fetchone()[0]
             avg_duration = connection.execute(
-                "SELECT COALESCE(ROUND(AVG(duration_ms), 1), 0) FROM command_history"
+                'SELECT COALESCE(ROUND(AVG(duration_ms), 1), 0) FROM command_history'
             ).fetchone()[0]
             top_rows = connection.execute(
                 """
@@ -263,23 +270,23 @@ class MemoryManager:
             ).fetchone()
 
         if total == 0:
-            return "Todavia no hay metricas. Usa algunos comandos y luego consulta metricas."
+            return 'Todavia no hay metricas. Usa algunos comandos y luego consulta metricas.'
 
         success_rate = round((success / total) * 100, 1) if total else 0
         lines = [
-            "Metricas del asistente:",
-            f"- Total de comandos: {total}",
-            f"- Exitos: {success}",
-            f"- Fallos: {failures}",
-            f"- Tasa de exito: {success_rate}%",
-            f"- Tiempo promedio de respuesta: {avg_duration} ms",
+            'Metricas del asistente:',
+            f'- Total de comandos: {total}',
+            f'- Exitos: {success}',
+            f'- Fallos: {failures}',
+            f'- Tasa de exito: {success_rate}%',
+            f'- Tiempo promedio de respuesta: {avg_duration} ms',
         ]
         if top_rows:
-            top_text = ", ".join(f"{row[0]} ({row[1]})" for row in top_rows)
-            lines.append(f"- Comandos mas usados: {top_text}")
+            top_text = ', '.join(f'{row[0]} ({row[1]})' for row in top_rows)
+            lines.append(f'- Comandos mas usados: {top_text}')
         if last_failure:
             lines.append(f"- Ultimo fallo: {last_failure[0]} [{last_failure[1] or 'desconocido'}]")
-        return "\n".join(lines)
+        return '\n'.join(lines)
 
     def record_history(
         self,
@@ -309,15 +316,15 @@ class MemoryManager:
 
     def find_conflict(self, normalized_phrase: str) -> dict[str, str] | None:
         for command in self.list_commands():
-            if self._normalize_phrase(command["phrase"]) == normalized_phrase:
+            if self._normalize_phrase(command['phrase']) == normalized_phrase:
                 return command
         return None
 
     def _write_aliases(self, aliases: dict[str, dict[str, str]]) -> None:
         self.aliases_path.parent.mkdir(parents=True, exist_ok=True)
         self.aliases_path.write_text(
-            json.dumps(aliases, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
+            json.dumps(aliases, ensure_ascii=False, indent=2) + '\n',
+            encoding='utf-8',
         )
 
     def _find_alias_key_by_normalized(self, values: dict[str, str], normalized_phrase: str) -> str | None:
@@ -327,69 +334,59 @@ class MemoryManager:
         return None
 
     def _normalize_phrase(self, text: str) -> str:
-        no_accents = "".join(
+        no_accents = ''.join(
             char
-            for char in unicodedata.normalize("NFKD", text.lower())
+            for char in unicodedata.normalize('NFKD', text.lower())
             if not unicodedata.combining(char)
         )
-        clean = re.sub(r"[^a-z0-9\s]", " ", no_accents)
-        return re.sub(r"\s+", " ", clean).strip()
+        clean = re.sub(r'[^a-z0-9\s]', ' ', no_accents)
+        return re.sub(r'\s+', ' ', clean).strip()
 
     def _is_success_response(self, response: str) -> bool:
         failure_prefixes = (
-            "No ",
-            "La ruta configurada no existe",
-            "El alias ",
-            "Debes indicar",
-            "El tipo de alias",
-            "Accion cancelada",
+            'No ',
+            'La ruta configurada no existe',
+            'El alias ',
+            'Debes indicar',
+            'El tipo de alias',
+            'Accion cancelada',
         )
         return not response.startswith(failure_prefixes)
 
     def _classify_error(self, response: str, intent: str) -> str:
-        if response.startswith("No entendi"):
-            return "unknown_command"
-        if response.startswith("No pude abrir"):
-            return "launch_error"
-        if response.startswith("La ruta configurada no existe"):
-            return "missing_target"
-        if "ya existe" in response or "choca" in response:
-            return "conflict"
-        if response.startswith("Accion cancelada"):
-            return "cancelled"
-        if intent in {"restart_computer", "shutdown_computer"} and "Modo seguro" in response:
-            return "safe_mode"
-        return ""
+        if response.startswith('No entendi'):
+            return 'unknown_command'
+        if response.startswith('No pude abrir'):
+            return 'launch_error'
+        if response.startswith('La ruta configurada no existe'):
+            return 'missing_target'
+        if 'ya existe' in response or 'choca' in response:
+            return 'conflict'
+        if response.startswith('Accion cancelada'):
+            return 'cancelled'
+        if intent in {'restart_computer', 'shutdown_computer'} and 'Modo seguro' in response:
+            return 'safe_mode'
+        return ''
 
     def _ensure_column(self, connection: sqlite3.Connection, table: str, column: str, definition: str) -> None:
-        existing = {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+        existing = {row[1] for row in connection.execute(f'PRAGMA table_info({table})')}
         if column not in existing:
-            connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+            connection.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
 
     def _build_builtin_path_rows(self, path_aliases: dict[str, str]) -> list[tuple[str, str, str, str, str, str, str, str, str, int]]:
-        labels = {
-            "drive_d": ("disco d", "Abre la unidad D"),
-            "downloads": ("descargas", "Abre la carpeta de descargas"),
-            "documents": ("documentos", "Abre la carpeta de documentos"),
-        }
         rows = []
-        for entity, target in path_aliases.items():
-            phrase, description = labels.get(entity, (entity, f"Abre {entity}"))
-            rows.append((phrase, "open_path", entity, target, "path", "builtin_path", "path", "low", description, 1))
+        for entity, command in BUILTIN_PATH_COMMANDS.items():
+            target = path_aliases.get(entity, '')
+            for phrase in command.phrases:
+                rows.append((phrase, 'open_path', entity, target, 'path', 'builtin_path', 'path', 'low', command.description, 1))
         return rows
 
     def _build_builtin_app_rows(self, app_targets: dict[str, str]) -> list[tuple[str, str, str, str, str, str, str, str, str, int]]:
-        labels = {
-            "chrome": ("chrome", "Abre Google Chrome"),
-            "vscode": ("vscode", "Abre Visual Studio Code"),
-            "excel": ("excel", "Abre Microsoft Excel"),
-            "power_bi": ("power bi", "Abre Power BI Desktop"),
-            "whatsapp": ("whatsapp", "Abre WhatsApp"),
-        }
         rows = []
-        for entity, target in app_targets.items():
-            phrase, description = labels.get(entity, (entity, f"Abre {entity}"))
-            rows.append((phrase, "open_app", entity, target, "app", "builtin_app", "app", "low", description, 1))
+        for entity, command in BUILTIN_APP_COMMANDS.items():
+            target = app_targets.get(entity, '')
+            for phrase in command.phrases:
+                rows.append((phrase, 'open_app', entity, target, 'app', 'builtin_app', 'app', 'low', command.description, 1))
         return rows
 
     def _build_custom_rows(
@@ -400,19 +397,32 @@ class MemoryManager:
         source: str,
     ) -> list[tuple[str, str, str, str, str, str, str, str, str, int]]:
         rows = []
-        category = "custom_path" if target_type == "path" else "custom_app"
+        category = 'custom_path' if target_type == 'path' else 'custom_app'
         for phrase, target in values.items():
-            description = f"Alias personalizado para {target_type}: {target}"
-            rows.append((phrase, intent, phrase, target, target_type, source, category, "low", description, 1))
+            description = f'Alias personalizado para {target_type}: {target}'
+            rows.append((phrase, intent, phrase, target, target_type, source, category, 'low', description, 1))
         return rows
 
     def _build_system_rows(self) -> list[tuple[str, str, str, str, str, str, str, str, str, int]]:
-        return [
-            ("hora", "get_time", "hora", "", "system", "system", "system", "low", "Consulta la hora actual", 1),
-            ("fecha", "get_date", "fecha", "", "system", "system", "system", "low", "Consulta la fecha actual", 1),
-            ("comandos", "list_commands", "comandos", "", "system", "system", "system", "low", "Muestra el catalogo de comandos", 1),
-            ("metricas", "show_metrics", "metricas", "", "system", "system", "system", "low", "Muestra metricas simples del asistente", 1),
-            ("reiniciar", "restart_computer", "reiniciar", "", "system", "system", "dangerous", "high", "Reinicia el equipo con confirmacion", 1),
-            ("apagar", "shutdown_computer", "apagar", "", "system", "system", "dangerous", "high", "Apaga el equipo con confirmacion", 1),
-            ("salir", "exit", "salir", "", "system", "system", "system", "low", "Cierra el asistente", 1),
-        ]
+        rows: list[tuple[str, str, str, str, str, str, str, str, str, int]] = []
+
+        mapping = {
+            'get_time': ('get_time', 'hora', 'Consulta la hora actual', 'system', 'low'),
+            'get_date': ('get_date', 'fecha', 'Consulta la fecha actual', 'system', 'low'),
+            'list_commands': ('list_commands', 'comandos', 'Muestra una guia de comandos utiles', 'system', 'low'),
+            'show_metrics': ('show_metrics', 'metricas', 'Muestra metricas simples del asistente', 'system', 'low'),
+            'show_status': ('show_status', 'estado', 'Muestra el diagnostico actual del asistente', 'system', 'low'),
+            'confirm': ('confirm', 'confirmar', 'Confirma una accion pendiente', 'system', 'low'),
+            'cancel': ('cancel', 'cancelar', 'Cancela una accion pendiente', 'system', 'low'),
+            'restart': ('restart_computer', 'reiniciar', 'Reinicia el equipo', 'dangerous', 'high'),
+            'shutdown': ('shutdown_computer', 'apagar', 'Apaga el equipo', 'dangerous', 'high'),
+            'exit': ('exit', 'salir', 'Cierra el asistente', 'system', 'low'),
+        }
+
+        for key, phrases in SYSTEM_PHRASES.items():
+            intent, entity, description, category, risk_level = mapping[key]
+            for phrase in phrases:
+                rows.append((phrase, intent, entity, '', 'system', 'system', category, risk_level, description, 1))
+
+        return rows
+

@@ -27,44 +27,54 @@ class AppConfig:
     app_targets: dict[str, str]
 
     @classmethod
-    def load(cls) -> "AppConfig":
+    def load(cls) -> 'AppConfig':
         root_dir = Path(__file__).resolve().parent.parent
         user_home = Path.home()
 
         path_aliases = {
-            "drive_d": r"D:\\",
-            "downloads": str(user_home / "Downloads"),
-            "documents": str(user_home / "Documents"),
+            'drive_d': r'D:\\',
+            'downloads': str(user_home / 'Downloads'),
+            'documents': str(user_home / 'Documents'),
+            'desktop': str(user_home / 'Desktop'),
+            'pictures': str(user_home / 'Pictures'),
+            'videos': str(user_home / 'Videos'),
+            'music': str(user_home / 'Music'),
         }
 
         app_targets = {
-            "chrome": "chrome",
-            "vscode": "vscode",
-            "excel": "excel",
-            "power_bi": "power_bi",
-            "whatsapp": "whatsapp",
-            "cmd": "cmd",
-            "explorer": "explorer",
+            'chrome': 'chrome',
+            'brave': 'brave',
+            'vscode': 'vscode',
+            'excel': 'excel',
+            'power_bi': 'power_bi',
+            'whatsapp': 'whatsapp',
+            'cmd': 'cmd',
+            'notepad': 'notepad',
+            'calculator': 'calculator',
+            'paint': 'paint',
+            'task_manager': 'task_manager',
+            'control_panel': 'control_panel',
+            'settings': 'settings',
         }
 
         return cls(
-            app_name="JarvisAI",
-            language="es-PE",
-            input_mode="text",
+            app_name='JarvisAI',
+            language='es-PE',
+            input_mode='text',
             enable_voice=False,
-            enable_tts=False,
-            safe_mode=True,
-            confirm_dangerous_actions=True,
-            log_level="INFO",
+            enable_tts=True,
+            safe_mode=False,
+            confirm_dangerous_actions=False,
+            log_level='INFO',
             root_dir=root_dir,
-            log_dir=root_dir / "logs",
-            history_path=root_dir / "data" / "history.db",
-            aliases_path=root_dir / "data" / "aliases.json",
+            log_dir=root_dir / 'logs',
+            history_path=root_dir / 'data' / 'history.db',
+            aliases_path=root_dir / 'data' / 'aliases.json',
             google_calendar_enabled=False,
             google_gmail_enabled=False,
-            google_credentials_path=root_dir / "credentials" / "google_client_secret.json",
-            google_calendar_token_path=root_dir / "credentials" / "token_calendar.json",
-            google_gmail_token_path=root_dir / "credentials" / "token_gmail.json",
+            google_credentials_path=root_dir / 'credentials' / 'google_client_secret.json',
+            google_calendar_token_path=root_dir / 'credentials' / 'token_calendar.json',
+            google_gmail_token_path=root_dir / 'credentials' / 'token_gmail.json',
             path_aliases=path_aliases,
             app_targets=app_targets,
         )
@@ -77,6 +87,6 @@ class AppConfig:
 
         if not self.aliases_path.exists():
             self.aliases_path.write_text(
-                "{\n  \"custom_paths\": {},\n  \"custom_apps\": {}\n}\n",
-                encoding="utf-8",
+                '{\n  "custom_paths": {},\n  "custom_apps": {}\n}\n',
+                encoding='utf-8',
             )

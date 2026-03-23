@@ -7,7 +7,9 @@ from app.brain.intents import ParsedCommand
 
 @dataclass(slots=True)
 class AssistantState:
-    status: str = "idle"
-    last_command: str = ""
-    last_response: str = ""
+    # Estado general del asistente para el loop actual.
+    status: str = 'idle'
+    current_mode: str = 'text'
+    last_command: str = ''
+    last_response: str = ''
     pending_confirmation: ParsedCommand | None = None
