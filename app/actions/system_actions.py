@@ -46,7 +46,7 @@ def build_confirmation_prompt(action: str, heard_text: str = '', safe_mode: bool
     if heard_text:
         return (
             f"Entendi: '{heard_text}'. Esta accion es sensible: {action_label}. "
-            f"En este modo {execution_mode}. Responde si o no."
+            f"En este modo {execution_mode}."
         )
 
-    return f'Esta accion es sensible: {action_label}. En este modo {execution_mode}. Responde si o no.'
+    return f'Esta accion es sensible: {action_label}. En este modo {execution_mode}.'

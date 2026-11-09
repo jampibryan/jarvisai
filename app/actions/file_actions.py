@@ -7,7 +7,7 @@ from pathlib import Path
 
 def open_path(target: str) -> str:
     if not target:
-        return "No hay una ruta configurada para ese comando. Revisa data/aliases.json o app/config.py."
+        return "No hay una ruta configurada para ese comando. Revisa tus alias o app/config.py."
 
     path = Path(target)
     if not path.exists():

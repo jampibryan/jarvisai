@@ -1,11 +1,12 @@
 ﻿import sqlite3
 from pathlib import Path
+from tempfile import gettempdir
 from uuid import uuid4
 
 from app.memory.memory_manager import MemoryManager
 
 
-TEMP_ROOT = Path(r'C:\Users\jeibi\AppData\Local\Temp')
+TEMP_ROOT = Path(gettempdir())
 
 
 def _build_temp_paths() -> tuple[Path, Path]:
@@ -133,5 +134,25 @@ def test_memory_manager_renders_human_command_guide() -> None:
         assert 'Guia rapida de comandos recomendados:' in summary
         assert 'jarvis, abre cmd' in summary
         assert 'jarvis, abre bloc de notas' in summary
+    finally:
+        _cleanup_paths(aliases_path, database_path)
+
+
+def test_memory_manager_suggests_close_commands() -> None:
+    aliases_path, database_path = _build_temp_paths()
+    try:
+        aliases_path.write_text('{"custom_paths": {}, "custom_apps": {"editor": "vscode"}}', encoding='utf-8')
+
+        memory = MemoryManager(aliases_path, database_path)
+        memory.ensure_database()
+        memory.sync_command_catalog(
+            path_aliases={'documents': 'C:/Docs', 'desktop': 'C:/Desktop', 'pictures': 'C:/Pictures', 'downloads': 'C:/Downloads', 'drive_d': 'D:/'},
+            app_targets={'vscode': 'vscode', 'cmd': 'cmd', 'notepad': 'notepad', 'calculator': 'calculator', 'chrome': 'chrome'},
+            aliases=memory.load_aliases(),
+        )
+
+        suggestions = memory.suggest_commands('crome')
+
+        assert 'chrome' in suggestions
     finally:
         _cleanup_paths(aliases_path, database_path)

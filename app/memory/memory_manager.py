@@ -1,5 +1,6 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+from difflib import get_close_matches
 import json
 import re
 import sqlite3
@@ -320,6 +321,41 @@ class MemoryManager:
                 return command
         return None
 
+    def suggest_commands(self, raw_text: str, limit: int = 3) -> list[str]:
+        normalized_input = self._normalize_phrase(raw_text)
+        if not normalized_input:
+            return []
+
+        phrases = [item['phrase'] for item in self.list_commands()]
+        normalized_to_phrase = {
+            self._normalize_phrase(phrase): phrase
+            for phrase in phrases
+            if self._normalize_phrase(phrase)
+        }
+
+        direct_matches = [
+            phrase
+            for normalized, phrase in normalized_to_phrase.items()
+            if normalized_input in normalized or normalized in normalized_input
+        ]
+
+        if len(direct_matches) >= limit:
+            return direct_matches[:limit]
+
+        close_normalized = get_close_matches(
+            normalized_input,
+            list(normalized_to_phrase.keys()),
+            n=limit,
+            cutoff=0.45,
+        )
+
+        suggestions: list[str] = []
+        for phrase in direct_matches + [normalized_to_phrase[item] for item in close_normalized]:
+            if phrase not in suggestions:
+                suggestions.append(phrase)
+
+        return suggestions[:limit]
+
     def _write_aliases(self, aliases: dict[str, dict[str, str]]) -> None:
         self.aliases_path.parent.mkdir(parents=True, exist_ok=True)
         self.aliases_path.write_text(
@@ -424,5 +460,31 @@ class MemoryManager:
             for phrase in phrases:
                 rows.append((phrase, intent, entity, '', 'system', 'system', category, risk_level, description, 1))
 
-        return rows
+        extra_commands = {
+            'open_url': (
+                ('abre openai.com', 'visita github.com', 've a google.com'),
+                'url',
+                'Abre una pagina web en el navegador',
+            ),
+            'search_file': (
+                ('busca archivo presupuesto', 'encuentra archivo tareas', 'donde esta reporte'),
+                'file_search',
+                'Busca archivos por nombre en ubicaciones comunes',
+            ),
+            'create_note': (
+                ('anota comprar leche', 'crea una nota llamar al banco', 'nota revisar el proyecto'),
+                'note',
+                'Guarda una nota rapida en texto',
+            ),
+            'set_timer': (
+                ('temporizador 5 minutos', 'pon timer de 10 segundos', 'pon un temporizador de 1 minuto para descansar'),
+                'timer',
+                'Inicia un temporizador simple en segundo plano',
+            ),
+        }
 
+        for intent, (phrases, entity, text) in extra_commands.items():
+            for phrase in phrases:
+                rows.append((phrase, intent, entity, '', 'system', 'system', 'system', 'low', text, 1))
+
+        return rows

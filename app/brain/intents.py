@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 """Tipos de intencion que el parser puede devolver al resto del asistente."""
 
@@ -10,6 +10,20 @@ class Intent(str, Enum):
     # Apertura de rutas o aplicaciones conocidas.
     OPEN_PATH = 'open_path'
     OPEN_APP = 'open_app'
+    OPEN_URL = 'open_url'
+    FILE_SELECTION = 'file_selection'
+    WEB_SEARCH = 'web_search'
+    SEARCH_FILE = 'search_file'
+    OPEN_SEARCH_RESULT = 'open_search_result'
+    CREATE_NOTE = 'create_note'
+    SET_TIMER = 'set_timer'
+    YOUTUBE = 'youtube'
+    YOUTUBE_CONTROL = 'youtube_control'
+    IMPORTANT_EMAIL = 'important_email'
+    CONNECT_GMAIL = 'connect_gmail'
+    CLARIFY_COMMAND = 'clarify_command'
+    LIST_WINDOWS = 'list_windows'
+    CLOSE_WINDOW = 'close_window'
 
     # Consultas simples del sistema.
     GET_TIME = 'get_time'
